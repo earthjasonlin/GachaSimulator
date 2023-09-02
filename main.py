@@ -2,7 +2,8 @@ import json
 import random
 import csv
 from tqdm import tqdm
-
+import argparse
+import os
 
 class ProbabilityTable:
     def __init__(self, table):
@@ -54,7 +55,7 @@ class Statistics:
                 results[n]["samples"].append(i + 1)
                 pbar.update()
 
-        with open("results_full.csv", "w", newline="") as f:
+        with open(results_full_filename, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["抽数", "该抽出金的概率", "刚好在该抽出金的概率", "该抽出金的样本数量", "该抽出金的样本号"])
             for n in range(1, maximum_draws + 1):
@@ -65,7 +66,7 @@ class Statistics:
                     [n, p, probability_of_exact_n, results[n]["count"], samples_str]
                 )
 
-        with open("results_no_samples.csv", "w", newline="") as f_no_samples:
+        with open(results_no_samples_filename, "w", newline="") as f_no_samples:
             writer_no_samples = csv.writer(f_no_samples)
             writer_no_samples.writerow(["抽数", "该抽出金的概率", "刚好在该抽出金的概率", "该抽出金的样本数量"])
             for n in range(1, maximum_draws + 1):
@@ -76,11 +77,20 @@ class Statistics:
                 )
 
 
-with open("config.json", "r") as f:
+parser = argparse.ArgumentParser(description="Take user defined parameters.")
+parser.add_argument("--config", "-c", type=str, required=True, help="Path to your config.json file")
+args = parser.parse_args()
+
+with open(args.config, "r") as f:
     config = json.load(f)
 
 table = ProbabilityTable(config["probability_table"])
 game = CardGame(table)
 statistics = Statistics(game, config["num_trials"])
+
+config_name, _ = os.path.splitext(args.config)
+
+results_full_filename = f"results_{config_name}_full.csv"
+results_no_samples_filename = f"results_{config_name}_no_samples.csv"
 
 statistics.run()
